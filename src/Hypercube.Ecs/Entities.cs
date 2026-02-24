@@ -7,6 +7,7 @@ namespace Hypercube.Ecs;
 public sealed class Entities
 {
     private readonly NumPool<int> _pool = new();
+    
     private int[] _versions = new int[1024];
 
     public Entity Create() {

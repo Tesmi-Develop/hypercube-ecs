@@ -1,4 +1,4 @@
-﻿namespace Hypercube.Ecs.Pool;
+﻿namespace Hypercube.Ecs.Components.Pool;
 
 public interface IComponentPool
 {

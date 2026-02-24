@@ -1,12 +1,12 @@
 ﻿using JetBrains.Annotations;
 
-namespace Hypercube.Ecs.Pool;
+namespace Hypercube.Ecs.Components.Pool;
 
 /// <summary>
 /// Component storage based on a sparse set.
 /// </summary>
 [PublicAPI]
-public sealed class ComponentPool<T> : IComponentPool where T : struct
+public sealed class ComponentPool<T> : IComponentPool where T : IComponent
 {
     // Dense component storage (index -> component)
     private T[] _components;
@@ -21,14 +21,12 @@ public sealed class ComponentPool<T> : IComponentPool where T : struct
     private bool[] _enabled;
 
     // Number of active components
-    private int _count;
-
-    public int Count => _count;
+    public int Count { get; private set; }
 
     /// <summary>
     /// Dense list of entities owning this component.
     /// </summary>
-    public ReadOnlySpan<int> DenseEntities => new(_entities, 0, _count);
+    public ReadOnlySpan<int> DenseEntities => new(_entities, 0, Count);
 
     public ComponentPool(int capacity = 64)
     {
@@ -49,7 +47,7 @@ public sealed class ComponentPool<T> : IComponentPool where T : struct
             return false;
 
         var index = _indices[id];
-        return index < _count && _entities[index] == id;
+        return index < Count && _entities[index] == id;
     }
 
     /// <summary>
@@ -77,12 +75,12 @@ public sealed class ComponentPool<T> : IComponentPool where T : struct
 
         EnsureDenseCapacity();
 
-        var index = _count++;
+        var index = Count++;
 
         _entities[index] = entity.Id;
         _indices[entity.Id] = index;
         _enabled[index] = true;
-        _components[index] = default;
+        _components[index] = default!;
 
         return ref _components[index];
     }
@@ -117,7 +115,7 @@ public sealed class ComponentPool<T> : IComponentPool where T : struct
     /// </summary>
     public void Flush()
     {
-        for (var i = _count - 1; i >= 0; i--)
+        for (var i = Count - 1; i >= 0; i--)
         {
             if (_enabled[i])
                 continue;
@@ -140,7 +138,7 @@ public sealed class ComponentPool<T> : IComponentPool where T : struct
     /// </summary>
     private void RemoveAt(int index)
     {
-        var lastIndex   = --_count;
+        var lastIndex   = --Count;
         var movedEntity = _entities[lastIndex];
 
         _entities[index] = movedEntity;
@@ -171,7 +169,7 @@ public sealed class ComponentPool<T> : IComponentPool where T : struct
     /// </summary>
     private void EnsureDenseCapacity()
     {
-        if (_count < _components.Length)
+        if (Count < _components.Length)
             return;
 
         var newSize = _components.Length << 1;
