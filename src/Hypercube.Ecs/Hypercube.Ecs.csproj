@@ -7,8 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Hypercube.Mathematics" Version="1.1.1" />
-    <PackageReference Include="Hypercube.Utilities" Version="1.1.2" />
+    <ProjectReference Include="..\..\..\mathematics\src\Hypercube.Mathematics\Hypercube.Mathematics.csproj" />
+    <ProjectReference Include="..\..\..\utilities\src\Hypercube.Utilities\Hypercube.Utilities.csproj" />
   </ItemGroup>
 
 </Project>

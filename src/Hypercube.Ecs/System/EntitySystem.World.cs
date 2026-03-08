@@ -10,7 +10,7 @@ public abstract partial class EntitySystem
         _world.Create();
     
     protected void EntityDestroy(Entity entity) =>
-        _world.Destroy(entity);
+        _world.Delete(entity);
     
     protected bool EntityAlive(Entity entity) =>
         _world.IsAlive(entity);

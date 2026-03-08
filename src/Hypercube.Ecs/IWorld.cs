@@ -5,7 +5,7 @@ namespace Hypercube.Ecs;
 public interface IWorld
 {
     Entity Create();
-    void Destroy(Entity entity);
+    void Delete(Entity entity);
     bool IsAlive(Entity entity);
 
     
