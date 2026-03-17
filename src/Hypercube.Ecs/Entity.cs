@@ -1,13 +1,17 @@
 ﻿using System.Runtime.InteropServices;
-using Hypercube.Ecs.Components;
-using JetBrains.Annotations;
+using Hypercube.Ecs.Attributes;
 
 namespace Hypercube.Ecs;
 
-[StructLayout(LayoutKind.Sequential), Serializable]
-public readonly struct Entity : IEquatable<Entity>
+[StructLayout(LayoutKind.Sequential), GenerateEntityPack(15), Serializable]
+public readonly partial struct Entity : IEquatable<Entity>
 {
-    public static readonly Entity Invalid = new(-1, -1);
+    public const int InvalidId = -1;
+    
+    public const int InvalidVersion = -1;
+    public const int QueryVersion = -2;
+    
+    public static readonly Entity Invalid = new(InvalidId, InvalidVersion);
     
     public readonly int Id;
     public readonly int Version;

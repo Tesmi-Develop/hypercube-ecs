@@ -6,7 +6,7 @@ namespace Hypercube.Ecs.Components.Pool;
 /// Component storage based on a sparse set.
 /// </summary>
 [PublicAPI]
-public sealed class ComponentPool<T> : IComponentPool where T : IComponent
+public sealed class ComponentPool<T> : IComponentPool where T : struct, IComponent
 {
     // Dense component storage (index -> component)
     private T[] _components;
@@ -66,7 +66,7 @@ public sealed class ComponentPool<T> : IComponentPool where T : IComponent
     /// Adds a component or returns an existing one.
     /// O(1)
     /// </summary>
-    public ref T Add(Entity entity)
+    public ref T Add(Entity entity, in T component)
     {
         EnsureSparseCapacity(entity.Id);
 
@@ -80,7 +80,7 @@ public sealed class ComponentPool<T> : IComponentPool where T : IComponent
         _entities[index] = entity.Id;
         _indices[entity.Id] = index;
         _enabled[index] = true;
-        _components[index] = default!;
+        _components[index] = component;
 
         return ref _components[index];
     }

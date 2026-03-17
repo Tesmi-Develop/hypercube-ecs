@@ -2,7 +2,7 @@
 using Hypercube.Ecs.Components;
 using JetBrains.Annotations;
 
-namespace Hypercube.Ecs.Query;
+namespace Hypercube.Ecs.Queries;
 
 [PublicAPI]
 public struct QueryMeta()

@@ -13,10 +13,12 @@ public static class ComponentStaticMeta<T> where T : IComponent
 {
     public static readonly ComponentMeta Meta;
     public static readonly Signature Signature;
+    public static readonly Type Type;
 
     static ComponentStaticMeta()
     {
         Meta = ComponentRegistry.Add<T>();
         Signature = new Signature(Meta);
+        Type = typeof(T);
     }
 }

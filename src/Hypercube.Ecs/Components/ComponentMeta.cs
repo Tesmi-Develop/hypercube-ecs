@@ -31,15 +31,20 @@ public readonly struct ComponentMeta : IEquatable<ComponentMeta>
     }
 
     /// <inheritdoc />
-    public bool Equals(ComponentMeta other) => Id == other.Id && Size == other.Size;
+    public bool Equals(ComponentMeta other)
+        => Id == other.Id && Size == other.Size;
 
     /// <inheritdoc />
-    public override bool Equals(object? obj) => obj is ComponentMeta other && Equals(other);
+    public override bool Equals(object? obj)
+        => obj is ComponentMeta other && Equals(other);
 
     /// <inheritdoc />
-    public override int GetHashCode() => HashCode.Combine(Id, Size);
+    public override int GetHashCode()
+        => HashCode.Combine(Id, Size);
     
-    public static bool operator ==(ComponentMeta left, ComponentMeta right) => left.Equals(right);
+    public static bool operator ==(ComponentMeta left, ComponentMeta right)
+        => left.Equals(right);
 
-    public static bool operator !=(ComponentMeta left, ComponentMeta right) => !(left == right);
+    public static bool operator !=(ComponentMeta left, ComponentMeta right)
+        => !(left == right);
 }

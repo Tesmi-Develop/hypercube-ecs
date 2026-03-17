@@ -51,8 +51,20 @@ public static class ComponentRegistry
         InternalMapping.Remove(type, out element);
 
     #endregion
-    
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool TryGet(Type type, out ComponentMeta componentMeta) =>
         Mapping.TryGetValue(type, out componentMeta);
+
+    // NOTE: Debug shit, don't use seriously
+    public static Type ResolveType(in ComponentMeta meta)
+    {
+        foreach (var (value, key) in InternalMapping)
+        {
+            if (meta == key)
+                return value;
+        }
+        
+        throw new KeyNotFoundException();
+    }
 }

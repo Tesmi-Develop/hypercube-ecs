@@ -16,9 +16,12 @@ public readonly struct Signature : IEquatable<Signature>
     
     private readonly ComponentMeta[] _components = [];
     private readonly int _hashCode;
-
+    private readonly int _maxId;
+    
     public int Count => _components.Length;
-
+    public bool IsEmpty => this == Empty;
+    public string ComponentNames => string.Join(';', _components.Select(meta => ComponentRegistry.ResolveType(meta).Name));
+    
     public Signature()
     {
         _components = [];
@@ -29,6 +32,12 @@ public readonly struct Signature : IEquatable<Signature>
     {
         _components = components;
         _hashCode = GetHashCode(_components);
+   
+        foreach (ref var component in components.AsSpan())
+        {
+            if (component.Id > _maxId)
+                _maxId = component.Id;
+        }
     }
 
     public Signature(Span<ComponentMeta> components) : this(components.ToArray())
@@ -69,31 +78,22 @@ public readonly struct Signature : IEquatable<Signature>
         return new Signature(set.ToArray());
     }
     
-    public static int GetHashCode(Span<ComponentMeta> components)
+    public int GetHashCode(Span<ComponentMeta> components)
     {
-        var maxId = 0;
-        foreach (ref var component in components)
-        {
-            if (component.Id > maxId)
-                maxId = component.Id;
-        }
-        
-        Span<uint> stack = stackalloc uint[MemoryHelper.GetBitChunkCount(maxId + 1)];
+        Span<uint> stack = stackalloc uint[MemoryHelper.GetBitChunkCount(_maxId + 1)];
         var bitSet = new SpanBitSet<uint>(stack);
 
         foreach (ref var type in components)
-        {
             bitSet.Set(type.Id);
-        }
 
         return HashCodeHelper.HashFromSpan(bitSet.AsReadOnlySpan());
     }
 
-    public static BitSet GetBitSet(Signature signature)
+    public BitSet GetBitSet(Signature signature)
     {
         return signature.Count == 0
             ? BitSet.Empty
-            : BitSet.Empty.Set(signature._components); // NOTE: It may be worth finding out the size of the chunk in advance
+            : new BitSet(_maxId + 1).Set(signature._components); // NOTE: It may be worth finding out the size of the chunk in advance
     }
     
     public static bool operator ==(Signature left, Signature right) => left.Equals(right);
