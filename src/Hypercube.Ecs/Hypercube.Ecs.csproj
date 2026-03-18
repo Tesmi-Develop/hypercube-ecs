@@ -1,21 +1,21 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-  </PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\mathematics\src\Hypercube.Mathematics\Hypercube.Mathematics.csproj" />
-    <ProjectReference Include="..\..\..\utilities\src\Hypercube.Utilities\Hypercube.Utilities.csproj" />
-      
-    <ProjectReference Include="..\Hypercube.Ecs.Analyzers\Hypercube.Ecs.Analyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-  </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\mathematics\src\Hypercube.Mathematics\Hypercube.Mathematics.csproj" />
+        <ProjectReference Include="..\..\..\utilities\src\Hypercube.Utilities\Hypercube.Utilities.csproj" />
+          
+        <ProjectReference Include="..\Hypercube.Ecs.Analyzers\Hypercube.Ecs.Analyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    </ItemGroup>
     
-  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
-    <DefineConstants>DEBUG</DefineConstants>
-  </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+        <DefineConstants>DEBUG</DefineConstants>
+    </PropertyGroup>
     
 </Project>

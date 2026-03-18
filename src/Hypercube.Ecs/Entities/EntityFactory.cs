@@ -46,7 +46,7 @@ public sealed class EntityFactory
     public bool Validate(Entity entity) => ValidateId(entity.Id) && ValidateVersion(entity.Id, entity.Version);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private bool ValidateId(int id) => _generator.Invalid(id);
+    private bool ValidateId(int id) => id != Entity.InvalidId && !_generator.Invalid(id);
 
     // NOTE: We need use Entity.QueryVersion?
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

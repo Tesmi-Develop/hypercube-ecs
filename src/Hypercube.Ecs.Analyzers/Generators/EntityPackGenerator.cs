@@ -1,8 +1,6 @@
-
 using System.Collections.Frozen;
 using System.Text;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 
 namespace Hypercube.Ecs.Analyzers.Generators;
@@ -12,84 +10,79 @@ public sealed class EntityPackGenerator : IIncrementalGenerator
 {
     private const string AttributeFullName = "Hypercube.Ecs.Attributes.GenerateEntityPackAttribute";
 
-    private static readonly FrozenSet<string> RequiredUsings = FrozenSet.Create(
+    private static readonly FrozenSet<string> RequiredUsings = new HashSet<string>
+    {
         "System",
         "Hypercube.Ecs.Components",
         "JetBrains.Annotations"
-    );
+    }.ToFrozenSet();
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        var types = context.SyntaxProvider
+        var attributeSymbol = context.CompilationProvider
+            .Select(static (compilation, _) =>
+                compilation.GetTypeByMetadataName(AttributeFullName));
+
+        var targetTypes = context.SyntaxProvider
             .CreateSyntaxProvider(
-                predicate: static (node, _) => node is StructDeclarationSyntax { AttributeLists.Count: > 0 },
-                transform: static (context, _) => GetTargetType(context)
-            )
-            .Where(static t => t is not null);
+                predicate: static (node, _) =>
+                    node is Microsoft.CodeAnalysis.CSharp.Syntax.StructDeclarationSyntax s &&
+                    s.AttributeLists.Count > 0,
+                transform: static (ctx, _) =>
+                {
+                    var syntax = (Microsoft.CodeAnalysis.CSharp.Syntax.StructDeclarationSyntax)ctx.Node;
+                    return ctx.SemanticModel.GetDeclaredSymbol(syntax) as INamedTypeSymbol;
+                })
+            .Where(static s => s is not null);
 
-        var compilationAndTypes = context.CompilationProvider.Combine(types.Collect());
+        var pipeline = targetTypes.Combine(attributeSymbol);
 
-        context.RegisterSourceOutput(compilationAndTypes, static (ctx, source) =>
+        context.RegisterSourceOutput(pipeline, static (ctx, source) =>
         {
-            var (compilation, structs) = source;
-            foreach (var structSyntax in Enumerable.OfType<StructDeclarationSyntax>(structs))
+            var (symbol, attributeSymbol) = source;
+
+            if (symbol is null || attributeSymbol is null)
+                return;
+
+            var attrData = symbol.GetAttributes()
+                .FirstOrDefault(a =>
+                    SymbolEqualityComparer.Default.Equals(a.AttributeClass, attributeSymbol));
+
+            if (attrData is null)
+                return;
+
+            var maxComponents = 0;
+
+            if (attrData.ConstructorArguments.Length > 0 &&
+                attrData.ConstructorArguments[0].Value is int value)
             {
-                GenerateOutput(ctx, compilation, structSyntax);
-            }
-        });
-    }
-
-    private static StructDeclarationSyntax? GetTargetType(GeneratorSyntaxContext context)
-    {
-        var type = (StructDeclarationSyntax) context.Node;
-        foreach (var list in type.AttributeLists)
-        {
-            foreach (var attribute in list.Attributes)
-            {
-                var symbol = context.SemanticModel.GetSymbolInfo(attribute).Symbol as IMethodSymbol;
-                var attributeType = symbol?.ContainingType;
-                if (attributeType?.ToDisplayString() == AttributeFullName)
-                    return type;
-            }
-        }
-
-        return null;
-    }
-
-    private static void GenerateOutput(
-        SourceProductionContext context,
-        Compilation compilation,
-        StructDeclarationSyntax typeSyntax)
-    {
-        var semanticModel = compilation.GetSemanticModel(typeSyntax.SyntaxTree);
-        if (semanticModel.GetDeclaredSymbol(typeSyntax) is not INamedTypeSymbol symbol)
-            return;
-
-        var maxComponents = 0;
-        foreach (var attr in symbol.GetAttributes())
-        {
-            if (attr.AttributeClass?.ToDisplayString() != AttributeFullName)
-                continue;
-
-            if (attr.ConstructorArguments.Length > 0 && attr.ConstructorArguments[0].Value is int value)
                 maxComponents = value;
-        }
+            }
 
-        var namespaceName = symbol.ContainingNamespace.IsGlobalNamespace
-            ? null
-            : symbol.ContainingNamespace.ToDisplayString();
+            if (maxComponents <= 0)
+                return;
 
-        var typeName = symbol.Name;
-        var source = GeneratePackedEntities(namespaceName, typeName, maxComponents);
+            var namespaceName = symbol.ContainingNamespace.IsGlobalNamespace
+                ? null
+                : symbol.ContainingNamespace.ToDisplayString();
 
-        context.AddSource($"{typeName}.Pack.g.cs", SourceText.From(source, Encoding.UTF8));
+            var typeName = symbol.Name;
+
+            var sourceText = GeneratePackedEntities(namespaceName, typeName, maxComponents);
+
+            var hintName = $"{symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}.Pack.g.cs"
+                .Replace("global::", "")
+                .Replace('<', '_')
+                .Replace('>', '_');
+
+            ctx.AddSource(hintName, SourceText.From(sourceText, Encoding.UTF8));
+        });
     }
 
     private static string GeneratePackedEntities(string? namespaceName, string typeName, int maxComponents)
     {
         var sb = new StringBuilder();
 
-        sb.AppendLine("// <auto-generated/>");
         sb.AppendLine("#nullable enable");
         sb.AppendLine();
 
@@ -110,7 +103,7 @@ public sealed class EntityPackGenerator : IIncrementalGenerator
 
             var componentFields = string.Join("\n",
                 Enumerable.Range(1, count)
-                    .Select(i => $"    public readonly T{i} Component{i};"));
+                    .Select(i => $"    public T{i} Component{i};"));
 
             var ctorParams = string.Join(", ",
                 Enumerable.Range(1, count)
@@ -120,21 +113,26 @@ public sealed class EntityPackGenerator : IIncrementalGenerator
                 Enumerable.Range(1, count)
                     .Select(i => $"        Component{i} = component{i};"));
 
-            var implicitComponents = string.Join("\n\n",
-                Enumerable.Range(1, count)
-                    .Select(i =>
-                        $"    public static implicit operator T{i}({typeName}<{typeParams}> arg) => arg.Component{i};"));
+            var implicitConversions = new StringBuilder();
+
+            implicitConversions.AppendLine($"    public static implicit operator Entity({typeName}<{typeParams}> arg) => arg.Id;");
+
+            for (var i = 1; i <= count; i++)
+            {
+                implicitConversions.AppendLine(
+                    $"    public static implicit operator T{i}({typeName}<{typeParams}> arg) => arg.Component{i};");
+            }
 
             var constraints = string.Join("\n",
                 Enumerable.Range(1, count)
-                    .Select(i => $"    where T{i} : IComponent"));
+                    .Select(i => $"    where T{i} : struct, IComponent"));
 
             sb.AppendLine("[PublicAPI]");
-            sb.AppendLine($"public readonly struct {typeName}<{typeParams}>");
+            sb.AppendLine($"public struct {typeName}<{typeParams}>");
             sb.AppendLine(constraints);
             sb.AppendLine("{");
 
-            sb.AppendLine("    public readonly Entity Id;");
+            sb.AppendLine("    public Entity Id;");
             sb.AppendLine(componentFields);
             sb.AppendLine();
 
@@ -145,8 +143,7 @@ public sealed class EntityPackGenerator : IIncrementalGenerator
             sb.AppendLine("    }");
             sb.AppendLine();
 
-            sb.AppendLine($"    public static implicit operator Entity({typeName}<{typeParams}> arg) => arg.Id;");
-            sb.AppendLine(implicitComponents);
+            sb.Append(implicitConversions);
 
             sb.AppendLine("}");
             sb.AppendLine();
