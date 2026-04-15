@@ -29,6 +29,17 @@ public abstract partial class EntitySystem
     protected bool HasComponent<T>(Entity entity) where T : struct, IComponent
         => World.Has<T>(entity);
 
+    protected bool TryGetComponent<T>(Entity entity, out T component) where T : struct, IComponent
+    {
+        component = default;
+        
+        if (!World.Has<T>(entity))
+            return false;
+        
+        component = World.Get<T>(entity);
+        return true;
+    }
+    
     protected void RemoveComponent<T>(Entity entity) where T : struct, IComponent
         => World.Remove<T>(entity);
 

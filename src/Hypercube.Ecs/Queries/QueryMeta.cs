@@ -17,7 +17,7 @@ public struct QueryMeta()
         All += ComponentStaticMeta<T>.Signature;
         return ref this;
     }
-    
+
     [UnscopedRef]
     public ref QueryMeta WithAny<T>() where T : IComponent
     {

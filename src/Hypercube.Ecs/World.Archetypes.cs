@@ -1,6 +1,5 @@
 ﻿using Hypercube.Ecs.Archetypes;
 using Hypercube.Ecs.Components;
-using Hypercube.Ecs.Entities;
 
 namespace Hypercube.Ecs;
 
