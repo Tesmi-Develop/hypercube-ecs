@@ -43,8 +43,11 @@ public abstract partial class EntitySystem
     protected void RemoveComponent<T>(Entity entity) where T : struct, IComponent
         => World.Remove<T>(entity);
 
-    protected Query CreateQuery(in QueryMeta meta) =>
-        World.CreateQuery(meta);
+    protected QueryBuilder GetQuery()
+        => new(World);
+    
+    protected Query CreateQuery(in QueryMeta meta)
+        => World.CreateQuery(meta);
 
     protected void Subscribe<TComponent, TEvent>(Events.Handling.EventHandler<TComponent, TEvent> handler, int priority = EventHandlerList.NoPriority)
         where TComponent : IComponent
