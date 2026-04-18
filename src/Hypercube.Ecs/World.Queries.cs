@@ -4,5 +4,16 @@ namespace Hypercube.Ecs;
 
 public partial class World
 {
-    public Query CreateQuery(in QueryMeta meta) => new(this, meta);
+    private Dictionary<QueryMeta, Query> _queries = new();
+    
+    public Query CreateQuery(in QueryMeta meta)
+    {
+        if (_queries.TryGetValue(meta, out var query))
+            return query;
+        
+        query = new Query(this, meta);
+        _queries[meta] = query;
+
+        return query;
+    }
 }

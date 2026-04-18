@@ -5,7 +5,7 @@ using JetBrains.Annotations;
 namespace Hypercube.Ecs.Queries;
 
 [PublicAPI]
-public struct QueryMeta()
+public record struct QueryMeta()
 {
     public static readonly QueryMeta Empty = new();
     

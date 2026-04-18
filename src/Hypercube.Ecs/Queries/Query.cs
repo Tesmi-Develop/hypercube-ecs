@@ -28,6 +28,7 @@ public sealed class Query
     private int? _cachedCount;
 
     private readonly int _hashCode;
+    private int _archetypesHashCode;
         
     public int Count
     {
@@ -56,15 +57,24 @@ public sealed class Query
         _hashCode = GetHashCode(this);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool Matches(Archetype archetype)
+        => Matches(archetype.BitSet);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool Match(Archetype archetype)
-        => Match(archetype.BitSet);
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool Match(BitSet bitset)
+    public bool Matches(BitSet bitset)
         => _all.All(bitset) && _any.AnyOrEmpty(bitset) && _none.None(bitset);
 
+    private void Match()
+    {
+        var newArchetypesHashCode = _world.ArchetypesCache;
+        if (newArchetypesHashCode == _archetypesHashCode)
+            return;
+
+        _cachedArchetypes = BuildCachedArchetypes();
+        _archetypesHashCode = newArchetypesHashCode;
+    }
+    
     public void Invalidate()
     {
         _cachedArchetypes = null;
@@ -77,7 +87,7 @@ public sealed class Query
         
         foreach (var archetype in _world.Archetypes)
         {
-            if (Match(archetype))
+            if (Matches(archetype))
                 matches.Add(archetype);
         }
         
@@ -85,8 +95,12 @@ public sealed class Query
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Enumerator GetEnumerator() => new(MatchingArchetypes);
-    
+    public Enumerator GetEnumerator()
+    {
+        Match();
+        return new Enumerator(MatchingArchetypes);
+    }
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void ForEach(Action<Entity> action)
     {

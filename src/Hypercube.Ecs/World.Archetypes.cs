@@ -77,6 +77,8 @@ public partial class World
     /// Gets all archetypes in the world.
     /// </summary>
     public ReadOnlySpan<Archetype> Archetypes => new(_archetypes, 0, _archetypeCount);
+    
+    public int ArchetypesCache => _archetypes.GetHashCode();
 
     /// <summary>
     /// Moves an entity from one archetype to another.
