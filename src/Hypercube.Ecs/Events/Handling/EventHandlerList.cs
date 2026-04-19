@@ -9,11 +9,20 @@ public readonly struct EventHandlerList()
     private readonly List<HandlerEntry> _handlers = [];
     private readonly ReaderWriterLockSlim _lock = new(LockRecursionPolicy.NoRecursion);
 
-    public void Add<TComponent, TEvent>(
-        EventHandler<TComponent, TEvent> handler,
-        int priority)
+    public void Add<TEvent>(EventHandler<TEvent> handler, int priority)
+        where TEvent : struct, IEvent
+    {
+        AddInternal(handler, priority);
+    }
+    
+    public void Add<TComponent, TEvent>(EventHandler<TComponent, TEvent> handler, int priority)
         where TComponent : IComponent
         where TEvent : struct, IEvent
+    {
+        AddInternal(handler, priority);
+    }
+    
+    private void AddInternal(object handler, int priority)
     {
         _lock.EnterWriteLock();
         
@@ -35,6 +44,7 @@ public readonly struct EventHandlerList()
         }
     }
 
+
     public void Remove(object handler)
     {
         _lock.EnterWriteLock();
@@ -46,6 +56,25 @@ public readonly struct EventHandlerList()
         finally
         {
             _lock.ExitWriteLock();
+        }
+    }
+
+    public void Invoke<TEvent>(ref TEvent args)
+        where TEvent : struct, IEvent
+    {
+        _lock.EnterReadLock();
+        
+        try
+        {
+            for (var i = 0; i < _handlers.Count; i++)
+            {
+                var handler = (EventHandler<TEvent>) _handlers[i].Handler;
+                handler.Invoke(ref args);
+            }
+        }
+        finally
+        {
+            _lock.ExitReadLock();
         }
     }
 
