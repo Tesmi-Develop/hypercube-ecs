@@ -1,5 +1,6 @@
 ﻿using Hypercube.Ecs.Components;
 using Hypercube.Mathematics.Vectors;
+using Hypercube.Utilities.Debugging.Logger;
 using JetBrains.Annotations;
 
 namespace Hypercube.Ecs.Test;
@@ -8,7 +9,7 @@ public static class Program
 {
     public static void Main()
     {
-        var world = new World();
+        var world = new World(new HeadlessLogger());
         
         var entity = world.Create();
         

@@ -131,6 +131,11 @@ public sealed class Query
             action(entity, ref _world.Get<T1>(entity), ref _world.Get<T2>(entity), ref _world.Get<T3>(entity));
     }
 
+    public override string ToString()
+    {
+        return $"All 0x{_all} Any 0x{_any} None 0x{_none}";
+    }
+
     public override int GetHashCode() => _hashCode;
 
     private static int GetHashCode(Query query)
@@ -141,7 +146,7 @@ public sealed class Query
         hash = hash * 23 + query._none.GetHashCode();
         return hash;
     }
-    
+
     public ref struct Enumerator
     {
         private FrozenSet<Archetype>.Enumerator _archetypeEnumerator;

@@ -8,6 +8,7 @@ public partial class World
     // Archetype system - uses arrays for better cache locality
     private Archetype[] _archetypes = new Archetype[16];
     private int _archetypeCount;
+    private int _archetypesHashCode = -1;
     
     // Empty archetype for entities with no components
     private readonly Archetype _emptyArchetype;
@@ -41,6 +42,7 @@ public partial class World
 
         // Create new archetype
         var archetype = new Archetype(signature);
+        _logger.Trace($"New archetype created: 0x{archetype.BitSet} ({archetype.Signature.ComponentNames})");
         
         // Expand if needed
         if (_archetypeCount >= _archetypes.Length)
@@ -51,25 +53,26 @@ public partial class World
         }
         
         _archetypes[_archetypeCount++] = archetype;
+        _archetypesHashCode = -1;
         
         // Empty archetype is always at index 0
-        if (signature != Signature.Empty)
-        {
-            // Move empty archetype to front if needed
-            if (_archetypeCount > 1 && _archetypes[0] != _emptyArchetype)
-            {
-                // Swap
-                for (int i = 0; i < _archetypeCount; i++)
-                {
-                    if (_archetypes[i] == _emptyArchetype)
-                    {
-                        (_archetypes[0], _archetypes[i]) = (_archetypes[i], _archetypes[0]);
-                        break;
-                    }
-                }
-            }
-        }
+        if (signature == Signature.Empty)
+            return archetype;
         
+        // Move empty archetype to front if needed
+        if (_archetypeCount <= 1 || _archetypes[0] == _emptyArchetype)
+            return archetype;
+        
+        // Swap
+        for (var i = 0; i < _archetypeCount; i++)
+        {
+            if (_archetypes[i] != _emptyArchetype)
+                continue;
+            
+            (_archetypes[0], _archetypes[i]) = (_archetypes[i], _archetypes[0]);
+            break;
+        }
+
         return archetype;
     }
 
@@ -78,7 +81,7 @@ public partial class World
     /// </summary>
     public ReadOnlySpan<Archetype> Archetypes => new(_archetypes, 0, _archetypeCount);
     
-    public int ArchetypesCache => _archetypes.GetHashCode();
+    public int ArchetypesCache => GetArchetypesHashCode();
 
     /// <summary>
     /// Moves an entity from one archetype to another.
@@ -129,5 +132,22 @@ public partial class World
             return;
 
         Array.Resize(ref _entityLocations, _entityLocations.Length * 2);
+    }
+    
+    private int GetArchetypesHashCode()
+    {
+        if (_archetypesHashCode != -1)
+            return _archetypesHashCode;
+        
+        var hash = 17;
+        foreach (var item in _archetypes)
+        {
+            hash = hash * 31 + (item?.GetHashCode() ?? 0);
+        }
+        
+        _logger.Trace($"New archetypes hash code: {hash}");
+
+        _archetypesHashCode = hash;
+        return hash;
     }
 }
