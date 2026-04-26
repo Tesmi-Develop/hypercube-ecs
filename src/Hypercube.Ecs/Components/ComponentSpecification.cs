@@ -1,6 +1,6 @@
 ﻿namespace Hypercube.Ecs.Components;
 
-public enum ComponentType : byte
+public enum ComponentSpecification : byte
 {
     /// <summary>
     /// Standard component that can be added to multiple entities and stores unique data per entity.

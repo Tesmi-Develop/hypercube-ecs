@@ -21,13 +21,15 @@ public readonly struct ComponentMeta : IEquatable<ComponentMeta>
     /// <summary>
     /// Specifies the type of component.
     /// </summary>
-    public readonly ComponentType Type;
+    public readonly ComponentSpecification Specification;
+
+    public Type Type => ComponentRegistry.ResolveType(this);
     
-    public ComponentMeta(int id, int size, ComponentType type = ComponentType.Dynamic)
+    public ComponentMeta(int id, int size, ComponentSpecification specification = ComponentSpecification.Dynamic)
     {
         Id = id;
         Size = size;
-        Type = type;
+        Specification = specification;
     }
 
     /// <inheritdoc />
