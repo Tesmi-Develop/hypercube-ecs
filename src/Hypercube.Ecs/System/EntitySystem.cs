@@ -1,11 +1,11 @@
 ﻿namespace Hypercube.Ecs.System;
 
-public abstract partial class EntitySystem : ISystem
+public abstract partial class EntitySystem<T> : ISystem<T>
 {
     public virtual void Initialize() { }
-    public virtual void BeforeUpdate(float deltaTime) { }
-    public virtual void Update(float deltaTime) { }
-    public virtual void AfterUpdate(float deltaTime) { }
+    public virtual void BeforeUpdate(T args) { }
+    public virtual void Update(T args) { }
+    public virtual void AfterUpdate(T args) { }
 
     public void Dispose()
     {

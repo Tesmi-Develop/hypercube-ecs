@@ -6,7 +6,7 @@ using JetBrains.Annotations;
 
 namespace Hypercube.Ecs.System;
 
-public abstract partial class EntitySystem
+public abstract partial class EntitySystem<T>
 {
     [UsedImplicitly(ImplicitUseKindFlags.Assign)]
     public World World { get; private set; } = null!;
@@ -20,28 +20,28 @@ public abstract partial class EntitySystem
     protected bool EntityAlive(Entity entity) =>
         World.Validate(entity);
     
-    protected ref T GetComponent<T>(Entity entity) where T : struct, IComponent
-        => ref World.Get<T>(entity);
+    protected ref TComp GetComponent<TComp>(Entity entity) where TComp : struct, IComponent
+        => ref World.Get<TComp>(entity);
 
-    protected ref T AddComponent<T>(Entity entity) where T : struct, IComponent
-        => ref World.Add<T>(entity);
+    protected ref TComp AddComponent<TComp>(Entity entity) where TComp : struct, IComponent
+        => ref World.Add<TComp>(entity);
     
-    protected bool HasComponent<T>(Entity entity) where T : struct, IComponent
-        => World.Has<T>(entity);
+    protected bool HasComponent<TComp>(Entity entity) where TComp : struct, IComponent
+        => World.Has<TComp>(entity);
 
-    protected bool TryGetComponent<T>(Entity entity, out T component) where T : struct, IComponent
+    protected bool TryGetComponent<TComp>(Entity entity, out TComp component) where TComp : struct, IComponent
     {
         component = default;
         
-        if (!World.Has<T>(entity))
+        if (!World.Has<TComp>(entity))
             return false;
         
-        component = World.Get<T>(entity);
+        component = World.Get<TComp>(entity);
         return true;
     }
     
-    protected void RemoveComponent<T>(Entity entity) where T : struct, IComponent
-        => World.Remove<T>(entity);
+    protected void RemoveComponent<TComp>(Entity entity) where TComp : struct, IComponent
+        => World.Remove<TComp>(entity);
 
     protected QueryBuilder GetQuery()
         => new(World);

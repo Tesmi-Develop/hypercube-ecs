@@ -1,6 +1,6 @@
 ﻿namespace Hypercube.Ecs.System.Collections;
 
-public interface ISystemCollection : ISystem, IEnumerable<ISystem>
+public interface ISystemCollection<T> : ISystem<T>, IEnumerable<ISystem<T>>
 {
-    T Get<T>() where T : ISystem;
+     TSystem Get<TSystem>() where TSystem : ISystem<T>;
 }

@@ -3,11 +3,11 @@ using System.Text;
 
 namespace Hypercube.Ecs.System.Collections;
 
-public sealed class SystemSequence : ISystemCollection
+public sealed class SystemSequence<T> : ISystemCollection<T>
 {
-    private readonly List<ISystem> _systems = [];
+    private readonly List<ISystem<T>> _systems = [];
     
-    public SystemSequence(params ISystem[] systems)
+    public SystemSequence(params ISystem<T>[] systems)
     {
         foreach (var system in systems)
             _systems.Add(system);
@@ -15,38 +15,37 @@ public sealed class SystemSequence : ISystemCollection
     
     public void Initialize()
     {
-        for (var index = 0; index < _systems.Count; index++)
-            _systems[index].Initialize();
+        foreach (var t in _systems)
+            t.Initialize();
     }
     
-    public void BeforeUpdate(float deltaTime)
+    public void BeforeUpdate(T deltaTime)
     {
-        for (var index = 0; index < _systems.Count; index++)
-            _systems[index].BeforeUpdate(deltaTime);
+        foreach (var t in _systems)
+            t.BeforeUpdate(deltaTime);
     }
 
-    public void Update(float deltaTime)
+    public void Update(T deltaTime)
     {
-        for (var index = 0; index < _systems.Count; index++)
-            _systems[index].Update(deltaTime);
+        foreach (var t in _systems)
+            t.Update(deltaTime);
     }
     
-    public void AfterUpdate(float deltaTime)
+    public void AfterUpdate(T deltaTime)
     {
-        for (var index = 0; index < _systems.Count; index++)
-            _systems[index].AfterUpdate(deltaTime);
+        foreach (var t in _systems)
+            t.AfterUpdate(deltaTime);
     }
     
     public void Dispose()
     {
-        for (var index = 0; index < _systems.Count; index++)
-            _systems[index].Dispose();
+        foreach (var t in _systems)
+            t.Dispose();
     }
-
-
-    public void Add<T>() where T : ISystem, new()
+    
+    public void Add<TSystem>() where TSystem : ISystem<T>, new()
     {
-        _systems.Add(new T());
+        _systems.Add(new TSystem());
     }
 
     public void Add(params ISystem[] systems)
@@ -55,22 +54,22 @@ public sealed class SystemSequence : ISystemCollection
             Add(system);
     }
     
-    public void Add(ISystem system)
+    public void Add(ISystem<T> system)
     {
         _systems.Add(system);
     }
     
-    public T Get<T>() where T : ISystem
+    public TSystem Get<TSystem>() where TSystem : ISystem<T>
     {
         foreach (var entry in _systems)
         {
             switch (entry)
             {
-                case T system:
+                case TSystem system:
                     return system;
                
-                case ISystemCollection collection:
-                    return collection.Get<T>();
+                case ISystemCollection<T> collection:
+                    return collection.Get<TSystem>();
             }
         }
 
@@ -93,7 +92,7 @@ public sealed class SystemSequence : ISystemCollection
     }
 
     /// <inheritdoc/>
-    public IEnumerator<ISystem> GetEnumerator() => ((IEnumerable<ISystem>) _systems).GetEnumerator();
+    public IEnumerator<ISystem<T>> GetEnumerator() => ((IEnumerable<ISystem<T>>) _systems).GetEnumerator();
     
     /// <inheritdoc/>
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
