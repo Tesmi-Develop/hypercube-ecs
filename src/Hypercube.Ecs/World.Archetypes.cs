@@ -98,7 +98,15 @@ public partial class World
         
         // Remove from old archetype
         var oldChunk = fromArchetype.Chunks[oldLocation.ChunkIndex];
-        fromArchetype.RemoveEntity(oldChunk, oldLocation.LocalIndex, entity);
+
+        var moveResult = fromArchetype.RemoveEntity(oldChunk, oldLocation.LocalIndex);
+        if (moveResult is not null)
+        {
+            var (movedEntityId, newIndex) = moveResult.Value;
+
+            var movedLocation = _entityLocations[movedEntityId];
+            _entityLocations[movedEntityId] = new EntityLocation(movedLocation.ArchetypeIndex, movedLocation.ChunkIndex, newIndex);
+        }
         
         // Add to new archetype
         var (newChunk, newLocalIndex) = toArchetype.AddEntity(entity);
@@ -107,7 +115,9 @@ public partial class World
         var newChunkIndex = 0;
         foreach (var c in toArchetype.Chunks)
         {
-            if (c == newChunk) break;
+            if (c == newChunk)
+                break;
+            
             newChunkIndex++;
         }
         

@@ -59,10 +59,11 @@ public sealed class Archetype
     /// <summary>
     /// Removes an entity from this archetype.
     /// </summary>
-    public void RemoveEntity(ArchetypeChunk chunk, int index, Entity entity)
+    public (int movedEntityId, int newIndex)? RemoveEntity(ArchetypeChunk chunk, int index)
     {
-        chunk.RemoveEntity(index, entity);
+        var result = chunk.RemoveEntity(index);
         EntityCount--;
+        return result;
     }
 
     /// <summary>
