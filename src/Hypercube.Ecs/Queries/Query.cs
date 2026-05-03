@@ -1,5 +1,4 @@
-﻿using System.Collections.Frozen;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using Hypercube.Ecs.Archetypes;
 using Hypercube.Ecs.Components;
 using Hypercube.Ecs.Entities;
@@ -24,7 +23,7 @@ public sealed class Query
     private readonly BitSet _none;
 
     // Cached matching archetypes - FrozenSet for zero allocations on iteration
-    private FrozenSet<Archetype>? _cachedArchetypes;
+    private List<Archetype>? _cachedArchetypes;
     private int? _cachedCount;
 
     private readonly int _hashCode;
@@ -36,7 +35,7 @@ public sealed class Query
         get => _cachedCount ??= MatchingArchetypes.Sum(archetype => archetype.EntityCount);
     }
     
-    public FrozenSet<Archetype> MatchingArchetypes
+    public List<Archetype> MatchingArchetypes
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => _cachedArchetypes ??= BuildCachedArchetypes();
@@ -81,9 +80,9 @@ public sealed class Query
         _cachedCount = 0;
     }
 
-    private FrozenSet<Archetype> BuildCachedArchetypes()
+    private List<Archetype> BuildCachedArchetypes()
     {
-        var matches = new HashSet<Archetype>(ArchetypeEqualityComparer.Instance);
+        var matches = new List<Archetype>();
         
         foreach (var archetype in _world.Archetypes)
         {
@@ -91,7 +90,7 @@ public sealed class Query
                 matches.Add(archetype);
         }
         
-        return matches.ToFrozenSet(ArchetypeEqualityComparer.Instance);
+        return matches;
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -130,6 +129,14 @@ public sealed class Query
         foreach (var entity in this)
             action(entity, ref _world.Get<T1>(entity), ref _world.Get<T2>(entity), ref _world.Get<T3>(entity));
     }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void With<T1, T2, T3, T4>(EntityRefAction<T1, T2, T3, T4> action) 
+        where T1 : struct, IComponent where T2 : struct, IComponent where T3 : struct, IComponent where T4 : struct, IComponent
+    {
+        foreach (var entity in this)
+            action(entity, ref _world.Get<T1>(entity), ref _world.Get<T2>(entity), ref _world.Get<T3>(entity), ref _world.Get<T4>(entity));
+    }
 
     public override string ToString()
     {
@@ -149,12 +156,12 @@ public sealed class Query
 
     public ref struct Enumerator
     {
-        private FrozenSet<Archetype>.Enumerator _archetypeEnumerator;
+        private List<Archetype>.Enumerator _archetypeEnumerator;
         private Archetype.Enumerator _currentArchetypeEnumerator;
 
         public Entity Current => new(_currentArchetypeEnumerator.CurrentEntityId, Entity.QueryVersion);
 
-        public Enumerator(FrozenSet<Archetype> archetypes)
+        public Enumerator(List<Archetype> archetypes)
         {
             _archetypeEnumerator = archetypes.GetEnumerator();
         }
