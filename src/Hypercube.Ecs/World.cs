@@ -1,7 +1,6 @@
 ﻿using Hypercube.Ecs.Components;
 using Hypercube.Ecs.Components.Pool;
 using Hypercube.Ecs.Lifetime;
-using Hypercube.Utilities.Debugging.Logger;
 using JetBrains.Annotations;
 
 namespace Hypercube.Ecs;
@@ -11,12 +10,6 @@ public partial class World : IWorld
 {
     // Legacy pools for direct component access (kept for compatibility)
     private readonly Dictionary<Type, IComponentPool> _pools = new();
-    private readonly ILogger _logger;
-    
-    public World(ILogger logger)
-    {
-        _logger = logger;
-    }
 
     public ref T Add<T>(Entity entity) where T : struct, IComponent
     {

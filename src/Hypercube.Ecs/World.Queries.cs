@@ -12,8 +12,6 @@ public partial class World
             return query;
         
         query = new Query(this, meta);
-        _logger.Trace($"New query created: {query}");
-        
         _queries[meta] = query;
 
         return query;
