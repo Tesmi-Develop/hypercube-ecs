@@ -37,6 +37,12 @@ public readonly struct EntityLocation : IEquatable<EntityLocation>
         => !(left == right);
 }
 
-public readonly record struct ChunkLocation(int ArchetypeIndex, int ChunkIndex);
+public readonly record struct ChunkLocation(int ArchetypeIndex, int ChunkIndex)
+{
+    public static readonly ChunkLocation Null = new(-1, -1);
+}
 
-public readonly record struct ChunkEntity(ArchetypeChunk Chunk, int Index);
+public readonly record struct ChunkEntity(int ChunkIndex, int Index)
+{
+    public static readonly ChunkEntity Null = new(-1, -1);
+}

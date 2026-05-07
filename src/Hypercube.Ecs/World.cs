@@ -16,20 +16,14 @@ public partial class World : IWorld
     public World(ILogger logger)
     {
         _logger = logger;
-        _emptyArchetype = GetOrCreateArchetype(Signature.Empty);
     }
-    
-    #region Component Operations
 
     public ref T Add<T>(Entity entity) where T : struct, IComponent
     {
-        var signature = ComponentStaticMeta<T>.Signature;
+        if (Has<T>(entity))
+            return ref GetPool<T>().Get(entity);
         
-        var currentArchetype = GetEntityArchetype(entity);
-        var newSignature = currentArchetype.Signature + signature;
-        
-        if (newSignature != currentArchetype.Signature)
-            MoveToArchetype(entity, currentArchetype, newSignature);
+        _archetypes.AddSignature(entity.Id, ComponentStaticMeta<T>.Signature);
         
         ref var component = ref GetPool<T>().Add(entity, new T());
         _eventBus.Raise(entity, ref component, new AddedEvent());
@@ -39,13 +33,10 @@ public partial class World : IWorld
 
     public ref T Add<T>(Entity entity, in T value) where T : struct, IComponent
     {
-        var signature = ComponentStaticMeta<T>.Signature;
+        if (Has<T>(entity))
+            return ref GetPool<T>().Get(entity);
         
-        var currentArchetype = GetEntityArchetype(entity);
-        var newSignature = currentArchetype.Signature + signature;
-        
-        if (newSignature != currentArchetype.Signature)
-            MoveToArchetype(entity, currentArchetype, newSignature);
+        _archetypes.AddSignature(entity.Id, ComponentStaticMeta<T>.Signature);
         
         ref var component = ref GetPool<T>().Add(entity, value);
         _eventBus.Raise(entity, ref component, new AddedEvent());
@@ -65,29 +56,16 @@ public partial class World : IWorld
     public void Remove<T>(Entity entity)
         where T : struct, IComponent
     {
-        var signature = ComponentStaticMeta<T>.Signature;
+        if (!Has<T>(entity))
+            return;
         
-        var currentArchetype = GetEntityArchetype(entity);
-        var newSignature = currentArchetype.Signature - signature;
-        
-        // Get component before removal for lifecycle event
-        ref var component = ref GetPool<T>().Get(entity);
-        
-        if (newSignature != currentArchetype.Signature)
-        {
-            MoveToArchetype(entity, currentArchetype, newSignature);
-        }
+        _archetypes.RemoveSignature(entity.Id, ComponentStaticMeta<T>.Signature);
 
-        // Dispatch lifecycle event
+        ref var component = ref GetPool<T>().Get(entity);
         _eventBus.Raise(entity, ref component, new RemovedEvent());
         
-        // Legacy: remove from pool
         GetPool<T>().Remove(entity);
     }
-
-    #endregion
-    
-    #region Legacy Pool Support
 
     private ComponentPool<T> GetPool<T>() where T : struct, IComponent
     {
@@ -99,6 +77,4 @@ public partial class World : IWorld
 
         return created;
     }
-
-    #endregion
 }

@@ -1,5 +1,4 @@
-﻿using System.Collections.Frozen;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using Hypercube.Ecs.Archetypes;
 using Hypercube.Ecs.Components;
 using Hypercube.Ecs.Entities;
@@ -24,11 +23,11 @@ public sealed class Query
     private readonly BitSet _none;
 
     // Cached matching archetypes - FrozenSet for zero allocations on iteration
-    private FrozenSet<Archetype>? _cachedArchetypes;
+    private List<Archetype>? _cachedArchetypes;
     private int? _cachedCount;
 
     private readonly int _hashCode;
-    private int _archetypesHashCode;
+    private int _archetypeVersion;
         
     public int Count
     {
@@ -36,7 +35,7 @@ public sealed class Query
         get => _cachedCount ??= MatchingArchetypes.Sum(archetype => archetype.EntityCount);
     }
     
-    public FrozenSet<Archetype> MatchingArchetypes
+    public List<Archetype> MatchingArchetypes
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => _cachedArchetypes ??= BuildCachedArchetypes();
@@ -51,9 +50,6 @@ public sealed class Query
         _any = meta.Any.AsBitSet();
         _none = meta.None.AsBitSet();
         
-        if (!meta.All.IsEmpty)
-            _world.GetOrCreateArchetype(meta.All);
-        
         _hashCode = GetHashCode(this);
     }
 
@@ -67,12 +63,12 @@ public sealed class Query
 
     private void Match()
     {
-        var newArchetypesHashCode = _world.ArchetypesCache;
-        if (newArchetypesHashCode == _archetypesHashCode)
+        var version = _world.ArchetypeVersion;
+        if (version == _archetypeVersion)
             return;
 
         _cachedArchetypes = BuildCachedArchetypes();
-        _archetypesHashCode = newArchetypesHashCode;
+        _archetypeVersion = version;
     }
     
     public void Invalidate()
@@ -81,17 +77,17 @@ public sealed class Query
         _cachedCount = 0;
     }
 
-    private FrozenSet<Archetype> BuildCachedArchetypes()
+    private List<Archetype> BuildCachedArchetypes()
     {
-        var matches = new HashSet<Archetype>(ArchetypeEqualityComparer.Instance);
+        var matches = new List<Archetype>();
         
         foreach (var archetype in _world.Archetypes)
         {
             if (Matches(archetype))
                 matches.Add(archetype);
         }
-        
-        return matches.ToFrozenSet(ArchetypeEqualityComparer.Instance);
+
+        return matches;
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -131,10 +127,9 @@ public sealed class Query
             action(entity, ref _world.Get<T1>(entity), ref _world.Get<T2>(entity), ref _world.Get<T3>(entity));
     }
 
-    public override string ToString()
-    {
-        return $"All 0x{_all} Any 0x{_any} None 0x{_none}";
-    }
+    public void Write(List<Entity> list) => ForEach(list.Add);
+    
+    public override string ToString() => $"All 0x{_all} Any 0x{_any} None 0x{_none}";
 
     public override int GetHashCode() => _hashCode;
 
@@ -149,12 +144,12 @@ public sealed class Query
 
     public ref struct Enumerator
     {
-        private FrozenSet<Archetype>.Enumerator _archetypeEnumerator;
+        private List<Archetype>.Enumerator _archetypeEnumerator;
         private Archetype.Enumerator _currentArchetypeEnumerator;
 
         public Entity Current => new(_currentArchetypeEnumerator.CurrentEntityId, Entity.QueryVersion);
 
-        public Enumerator(FrozenSet<Archetype> archetypes)
+        public Enumerator(List<Archetype> archetypes)
         {
             _archetypeEnumerator = archetypes.GetEnumerator();
         }
@@ -179,15 +174,4 @@ public sealed class Query
         [PublicAPI]
         public void Reset() => throw new NotSupportedException();
     }
-}
-
-file sealed class ArchetypeEqualityComparer : IEqualityComparer<Archetype>
-{
-    public static readonly ArchetypeEqualityComparer Instance = new();
-
-    public bool Equals(Archetype? x, Archetype? y)
-        => x?.HashCode == y?.HashCode;
-    
-    public int GetHashCode(Archetype obj)
-        => obj.HashCode;
 }

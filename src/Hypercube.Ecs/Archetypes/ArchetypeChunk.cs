@@ -11,41 +11,48 @@ namespace Hypercube.Ecs.Archetypes;
 [PublicAPI]
 public sealed class ArchetypeChunk
 {
-    public readonly Archetype Archetype;
-    public readonly int Capacity;
-
-    public int Count { get; private set; }
-
-    private readonly int[] _entities;
+    public const int Capacity = 256;
     
-    public ReadOnlySpan<int> Entities => new(_entities, 0, Count);
+    public readonly Archetype Archetype;
+    public readonly int ArchetypeIndex;
+
+    private readonly EntityId[] _entities = new EntityId[Capacity];
+    
+    public int Count { get; private set; }
+    
+    public ReadOnlySpan<EntityId> Entities => new(_entities, 0, Count);
+    
     public bool Full => Count >= Capacity;
     
-    public ArchetypeChunk(Archetype archetype, int capacity)
+    public ArchetypeChunk(Archetype archetype, int index)
     {
         Archetype = archetype;
-        Capacity = capacity;
-        
-        _entities = new int[capacity];
+        ArchetypeIndex = index;
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public int AddEntity(Entity entity)
+    public int Add(EntityId entity)
     {
         var index = Count++;
-        _entities[index] = entity.Id;
+        
+        _entities[index] = entity;
         
         return index;
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void RemoveEntity(int index, Entity entity)
+    public int RemoveAt(int index)
     {
+        // Swap deletion, last element replace index
+        // Example: [A, B, C, D]
+        // Remove B -> [A, D, C]
+        
         var lastIndex = --Count;
         if (index == lastIndex)
-            return;
+            return -1;
 
         _entities[index] = _entities[lastIndex];
+        return lastIndex;
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

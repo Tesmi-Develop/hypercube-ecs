@@ -15,16 +15,17 @@ namespace Hypercube.Ecs.Archetypes;
 [DebuggerDisplay("{Signature.ComponentNames}")]
 public sealed class Archetype
 {
-    public const int ChunkCapacity = 256;
+    public const int DefaultChuckCount = 4;
     
     public readonly Signature Signature;
     public readonly BitSet BitSet;
-    public readonly int HashCode;
     
-    private ArchetypeChunk[] _chunks = new ArchetypeChunk[4];
-    private ArchetypeChunk? _lastChunk;
+    private ArchetypeChunk[] _chunks = new ArchetypeChunk[DefaultChuckCount];
     private int _chunkCount;
-
+        
+    private int[] _availableChunks = new int[DefaultChuckCount];
+    private int _availableChunkCount;
+    
     public int EntityCount { get; private set; }
     
     public ReadOnlySpan<ArchetypeChunk> Chunks => new(_chunks, 0, _chunkCount);
@@ -33,36 +34,41 @@ public sealed class Archetype
     {
         Signature = signature;
         BitSet = signature.AsBitSet();
-        
-        HashCode = BitSet.GetHashCode();
     }
 
     /// <summary>
     /// Adds an entity to this archetype, returning the chunk and local index.
     /// </summary>
-    public ChunkEntity AddEntity(Entity entity)
+    public ChunkEntity Add(EntityId entityId)
     {
-        if (_lastChunk is null || _lastChunk.Full)
-        {
-            EnsureChunkCapacity();
-            
-            _lastChunk = new ArchetypeChunk(this, ChunkCapacity);
-            _chunks[_chunkCount++] = _lastChunk;
-        }
-
-        var index = _lastChunk.AddEntity(entity);
-        EntityCount++;
+        var chunk = _availableChunkCount == 0 
+            ? CreateChunk() 
+            : _chunks[_availableChunks[0]];
         
-        return new ChunkEntity(_lastChunk, index);
+        var localIndex = chunk.Add(entityId);
+        
+        if (chunk.Full)
+            RemoveAvailable(chunk.ArchetypeIndex);
+
+        EntityCount++;
+        return new ChunkEntity(chunk.ArchetypeIndex, localIndex);
     }
 
     /// <summary>
     /// Removes an entity from this archetype.
     /// </summary>
-    public void RemoveEntity(ArchetypeChunk chunk, int index, Entity entity)
+    public ChunkEntity RemoveAt(int chunkIndex, int index)
     {
-        chunk.RemoveEntity(index, entity);
+        var chunk = _chunks[chunkIndex];
+        if (chunk.Full)
+            AddAvailable(chunk.ArchetypeIndex);
+        
+        var localIndex = chunk.RemoveAt(index);
         EntityCount--;
+        
+        return localIndex == -1
+            ? ChunkEntity.Null
+            : new ChunkEntity(chunkIndex, localIndex);
     }
 
     /// <summary>
@@ -71,12 +77,52 @@ public sealed class Archetype
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Enumerator GetEnumerator() => new(this);
 
-    private void EnsureChunkCapacity()
+    private ArchetypeChunk CreateChunk()
     {
-        if (_chunkCount < _chunks.Length)
-            return;
+        var chunkId = _chunkCount++;
+        var instance = new ArchetypeChunk(this, chunkId);
 
-        Array.Resize(ref _chunks, _chunks.Length * 2);
+        while (_chunkCount >= _chunks.Length)
+            Array.Resize(ref _chunks, _chunks.Length * 2);
+        
+        _chunks[chunkId] = instance;
+        AddAvailable(chunkId);
+        
+        return instance;
+    }
+
+    private void AddAvailable(int chunkIndex)
+    {
+        Debug.Assert(_chunks[chunkIndex] is not null);
+        Debug.Assert(!_chunks[chunkIndex].Full);
+
+        while (chunkIndex >= _availableChunks.Length)
+            Array.Resize(ref _availableChunks, _availableChunks.Length * 2);
+
+        var index = _availableChunkCount++;
+        
+        _availableChunks[index] = chunkIndex;
+    }
+
+    private void RemoveAvailable(int chunkIndex)
+    {
+        Debug.Assert(_chunks[chunkIndex] is not null);
+        
+        for (var i = 0; i < _availableChunkCount; i++)
+        {
+            var element = _availableChunks[i];
+            if (element != chunkIndex)
+                continue;
+
+            var lastIndex = --_availableChunkCount;
+            if (lastIndex == i)
+                continue;
+            
+            _availableChunks[i] = _availableChunks[lastIndex];
+            return;
+        }
+        
+        throw new ArgumentOutOfRangeException(nameof(chunkIndex));
     }
 
     /// <summary>

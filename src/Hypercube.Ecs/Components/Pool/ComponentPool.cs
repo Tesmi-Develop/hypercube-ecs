@@ -173,7 +173,9 @@ public sealed class ComponentPool<T> : IComponentPool where T : struct, ICompone
             return;
 
         var newSize = _components.Length << 1;
-
+        while (newSize <= _components.Length)
+            newSize <<= 1;
+        
         Array.Resize(ref _components, newSize);
         Array.Resize(ref _entities, newSize);
         Array.Resize(ref _enabled, newSize);

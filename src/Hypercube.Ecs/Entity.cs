@@ -13,37 +13,22 @@ public readonly partial struct Entity : IEquatable<Entity>
     
     public static readonly Entity Invalid = new(InvalidId, InvalidVersion);
     
-    public readonly int Id;
+    public readonly EntityId Id;
     public readonly int Version;
 
-    public Entity(int id, int version)
+    public Entity(EntityId id, int version)
     {
         Id = id;
         Version = version;
     }
 
-    public bool Equals(Entity other)
-    {
-        return Id == other.Id && Version == other.Version;
-    }
+    public bool Equals(Entity other) => Id == other.Id && Version == other.Version;
 
-    public override bool Equals(object? obj)
-    {
-        return obj is Entity other && Equals(other);
-    }
+    public override bool Equals(object? obj) => obj is Entity other && Equals(other);
 
-    public override int GetHashCode()
-    {
-        return (Id << 16) ^ Version;
-    }
+    public override int GetHashCode() => (Id << 16) ^ Version;
 
-    public static bool operator ==(Entity left, Entity right)
-    {
-        return left.Equals(right);
-    }
+    public static bool operator ==(Entity left, Entity right) => left.Equals(right);
 
-    public static bool operator !=(Entity left, Entity right)
-    {
-        return !(left == right);
-    }
+    public static bool operator !=(Entity left, Entity right) => !(left == right);
 }

@@ -28,5 +28,5 @@ public interface IWorld
     void Remove<T>(Entity entity)
         where T : struct, IComponent;
     
-    Query CreateQuery(in QueryMeta meta);
+    Query Query(in QueryMeta meta);
 }

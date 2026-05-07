@@ -26,6 +26,9 @@ public abstract partial class EntitySystem<T>
     protected ref TComp AddComponent<TComp>(Entity entity) where TComp : struct, IComponent
         => ref World.Add<TComp>(entity);
     
+    protected ref TComp AddComponent<TComp>(Entity entity, in TComp value) where TComp : struct, IComponent
+        => ref World.Add(entity, value);
+
     protected bool HasComponent<TComp>(Entity entity) where TComp : struct, IComponent
         => World.Has<TComp>(entity);
 
@@ -43,11 +46,14 @@ public abstract partial class EntitySystem<T>
     protected void RemoveComponent<TComp>(Entity entity) where TComp : struct, IComponent
         => World.Remove<TComp>(entity);
 
+    protected Query Query(in QueryMeta meta)
+        => World.Query(meta);
+    
     protected QueryBuilder GetQuery()
         => new(World);
     
     protected Query CreateQuery(in QueryMeta meta)
-        => World.CreateQuery(meta);
+        => World.Query(meta);
 
     protected void Subscribe<TComponent, TEvent>(Events.Handling.EventHandler<TComponent, TEvent> handler, int priority = EventHandlerList.NoPriority)
         where TComponent : IComponent

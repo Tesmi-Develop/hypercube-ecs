@@ -308,5 +308,5 @@ public struct QueryBuilder
 
     #endregion
 
-    public Query Build() => _world.CreateQuery(_meta);
+    public Query Build() => _world.Query(_meta);
 }

@@ -1,4 +1,5 @@
-﻿using Hypercube.Ecs.Entities;
+﻿using Hypercube.Ecs.Components;
+using Hypercube.Ecs.Entities;
 
 namespace Hypercube.Ecs;
 
@@ -10,23 +11,7 @@ public partial class World
     public Entity Create()
     {
         var entity = _entityFactory.Create();
-        EnsureEntityLocationCapacity(entity.Id);
-        
-        // Add to empty archetype
-        var (chunk, index) = _emptyArchetype.AddEntity(entity);
-        
-        // Find chunk index
-        var chunkIndex = 0;
-        foreach (var c in _emptyArchetype.Chunks)
-        {
-            if (c == chunk)
-                break;
-            
-            chunkIndex++;
-        }
-
-        _entityLocations[entity.Id] = new EntityLocation(0, chunkIndex, index);
-        
+        _archetypes.Add(entity.Id, Signature.Empty);
         return entity;
     }
 
@@ -35,19 +20,8 @@ public partial class World
         if (!_entityFactory.Validate(entity))
             return;
 
-        // Remove from current archetype
-        if (entity.Id < _entityLocations.Length)
-        {
-            var location = _entityLocations[entity.Id];
-            if (location.ArchetypeIndex < _archetypeCount)
-            {
-                var archetype = _archetypes[location.ArchetypeIndex];
-                var chunk = archetype.Chunks[location.ChunkIndex];
-                archetype.RemoveEntity(chunk, location.LocalIndex, entity);
-            }
-        }
-        
-        // Legacy: remove from pools
+        _archetypes.Remove(entity.Id);
+
         foreach (var pool in _pools.Values)
             pool.Remove(entity);
 
