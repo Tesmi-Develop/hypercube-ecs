@@ -25,7 +25,10 @@ public sealed class ArchetypeContainer
         var archetype = GetOrCreateArchetype(signature, out var archetypeIndex);
         var (chunkIndex, index) = archetype.Add(entityId);
         
-        return new EntityLocation(archetypeIndex, chunkIndex, index);
+        var location = new EntityLocation(archetypeIndex, chunkIndex, index);
+        _locations[entityId] = location;
+
+        return location;
     }
 
     public EntityLocation AddSignature(EntityId entityId, Signature signature)
@@ -66,7 +69,8 @@ public sealed class ArchetypeContainer
         Remove(_locations[entityId]);
         
         var newChunkEntity = to.Add(entityId);
-        var newArchetypeIndex = 0;
+        var newArchetypeIndex = -1;
+        
         for (var i = 0; i < _archetypeCount; i++)
         {
             if (_archetypes[i] != to)
@@ -75,6 +79,8 @@ public sealed class ArchetypeContainer
             newArchetypeIndex = i;
             break;
         }
+        
+        Debug.Assert(newArchetypeIndex >= 0);
         
         var location = new EntityLocation(newArchetypeIndex, newChunkEntity.ChunkIndex, newChunkEntity.Index);
         _locations[entityId] = location;
@@ -112,20 +118,16 @@ public sealed class ArchetypeContainer
     private void Remove(EntityLocation location)
     {
         var archetype = _archetypes[location.ArchetypeIndex];
-        
-        var replace = archetype.RemoveAt(location.ChunkIndex, location.LocalIndex);
-        if (replace == ChunkEntity.Null)
+        if (!archetype.RemoveAt(location.ChunkIndex, location.LocalIndex, out var movedEntity,  out var movedChunkEntity))
             return;
         
-        var moved = archetype.Chunks[replace.ChunkIndex].Entities[location.LocalIndex].Value;
-        var movedLocation = _locations[moved];
-
-        _locations[moved] = new EntityLocation(movedLocation.ArchetypeIndex, replace.ChunkIndex, replace.Index);
+        ref var movedLocation = ref _locations[movedEntity];
+        movedLocation = new EntityLocation(movedLocation.ArchetypeIndex, movedChunkEntity.ChunkIndex, movedChunkEntity.Index);
     }
     
     private void Reserve(EntityId entityId)
     {
-        while (entityId > _locations.Length)
+        while (entityId >= _locations.Length)
             Array.Resize(ref _locations, _locations.Length * 2);
     }
 

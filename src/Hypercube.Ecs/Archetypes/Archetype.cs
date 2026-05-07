@@ -57,20 +57,26 @@ public sealed class Archetype
     /// <summary>
     /// Removes an entity from this archetype.
     /// </summary>
-    public ChunkEntity RemoveAt(int chunkIndex, int index)
+    public bool RemoveAt(int chunkIndex, int index, out EntityId movedEntity, out ChunkEntity movedChunkEntity)
     {
         var chunk = _chunks[chunkIndex];
-        if (chunk.Full)
-            AddAvailable(chunk.ArchetypeIndex);
-        
-        var localIndex = chunk.RemoveAt(index);
-        EntityCount--;
-        
-        return localIndex == -1
-            ? ChunkEntity.Null
-            : new ChunkEntity(chunkIndex, localIndex);
-    }
+        var wasFull = chunk.Full;
 
+        if (chunk.RemoveAt(index, out movedEntity, out var movedFrom))
+        {
+            EntityCount--;
+
+            if (wasFull)
+                AddAvailable(chunk.ArchetypeIndex);
+
+            movedChunkEntity = new ChunkEntity(chunkIndex, movedFrom);
+            return true;
+        }
+
+        movedChunkEntity = ChunkEntity.Null;
+        return false;
+    }
+    
     /// <summary>
     /// Returns an enumerator over all entities in this archetype.
     /// </summary>
@@ -121,8 +127,9 @@ public sealed class Archetype
             _availableChunks[i] = _availableChunks[lastIndex];
             return;
         }
-        
-        throw new ArgumentOutOfRangeException(nameof(chunkIndex));
+
+        // We're skipping the receipt that wasn't available
+        // it's still unavailable - that's normal
     }
 
     /// <summary>

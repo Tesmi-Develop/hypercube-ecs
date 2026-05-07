@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
 
@@ -39,22 +40,36 @@ public sealed class ArchetypeChunk
         
         return index;
     }
-    
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public int RemoveAt(int index)
+    public bool RemoveAt(int index, out EntityId movedEntity, out int movedFromIndex)
     {
         // Swap deletion, last element replace index
         // Example: [A, B, C, D]
         // Remove B -> [A, D, C]
         
-        var lastIndex = --Count;
-        if (index == lastIndex)
-            return -1;
+        Debug.Assert(Count >= 0);
 
-        _entities[index] = _entities[lastIndex];
-        return lastIndex;
+        var a = 1;
+        if (Count == 5)
+            a = 2;
+        
+        var lastIndex = --Count;
+        if (lastIndex == index)
+        {
+            movedEntity = default;
+            movedFromIndex = -1;
+            return false;
+        }
+
+        movedEntity = _entities[lastIndex];
+        _entities[index] = movedEntity;
+
+        movedFromIndex = lastIndex;
+        
+        return true;
     }
-    
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Enumerator GetEnumerator() => new(this);
     
