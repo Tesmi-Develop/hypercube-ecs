@@ -74,4 +74,20 @@ public abstract partial class EntitySystem<T>
         where TComponent : IComponent
         where TEvent : struct, IEvent
         => World.Events.Raise(entity, ref component, ref args);
+        
+    protected void Subscribe<TEvent>(Events.Handling.EventHandler<TEvent> handler, int priority = EventHandlerList.NoPriority)
+        where TEvent : struct, IEvent
+        => World.Events.Subscribe(handler, priority);
+
+    protected void Unsubscribe<TEvent>(Events.Handling.EventHandler<TEvent> handler)
+        where TEvent : struct, IEvent
+        => World.Events.Unsubscribe(handler);
+    
+    protected void Raise<TEvent>(TEvent args)
+        where TEvent : struct, IEvent
+        => World.Events.Raise(ref args);
+    
+    protected void Raise<TEvent>(ref TEvent args)
+        where TEvent : struct, IEvent
+        => World.Events.Raise(ref args);
 }
