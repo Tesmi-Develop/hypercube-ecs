@@ -54,7 +54,7 @@ public sealed class ArchetypeContainer
         
         Debug.Assert(location.ArchetypeIndex < _archetypes.Length);
         
-        Remove(location);
+        RemoveInternal(entityId);
     }
 
     public EntityLocation Move(EntityId entityId, Archetype from, Archetype to)
@@ -66,7 +66,7 @@ public sealed class ArchetypeContainer
         if (from == to)
             return _locations[entityId];
         
-        Remove(_locations[entityId]);
+        RemoveInternal(entityId);
         
         var newChunkEntity = to.Add(entityId);
         var newArchetypeIndex = -1;
@@ -115,14 +115,23 @@ public sealed class ArchetypeContainer
         return archetype;
     }
 
-    private void Remove(EntityLocation location)
+    private void RemoveInternal(EntityId entityId)
     {
-        var archetype = _archetypes[location.ArchetypeIndex];
-        if (!archetype.RemoveAt(location.ChunkIndex, location.LocalIndex, out var movedEntity,  out var movedChunkEntity))
+        var location = _locations[entityId];
+        
+        var archetypeIndex = location.ArchetypeIndex;
+        var chunkIndex = location.ChunkIndex;
+        var localIndex = location.LocalIndex;
+        
+        var archetype = _archetypes[archetypeIndex];
+        
+        _locations[entityId] = default;
+        
+        if (!archetype.RemoveAt(chunkIndex, localIndex, out var movedEntity))
             return;
         
         ref var movedLocation = ref _locations[movedEntity];
-        movedLocation = new EntityLocation(movedLocation.ArchetypeIndex, movedChunkEntity.ChunkIndex, movedChunkEntity.Index);
+        movedLocation = new EntityLocation(archetypeIndex, chunkIndex, localIndex);
     }
     
     private void Reserve(EntityId entityId)

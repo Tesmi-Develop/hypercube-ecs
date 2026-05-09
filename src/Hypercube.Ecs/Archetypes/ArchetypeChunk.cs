@@ -42,7 +42,7 @@ public sealed class ArchetypeChunk
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool RemoveAt(int index, out EntityId movedEntity, out int movedFromIndex)
+    public bool RemoveAt(int index, out EntityId movedEntity)
     {
         // Swap deletion, last element replace index
         // Example: [A, B, C, D]
@@ -53,15 +53,16 @@ public sealed class ArchetypeChunk
         var lastIndex = --Count;
         if (lastIndex == index)
         {
+            _entities[index] = default;
+            
             movedEntity = default;
-            movedFromIndex = -1;
             return false;
         }
 
         movedEntity = _entities[lastIndex];
+        
         _entities[index] = movedEntity;
-
-        movedFromIndex = lastIndex;
+        _entities[lastIndex] = default;
         
         return true;
     }
