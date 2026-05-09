@@ -57,23 +57,24 @@ public sealed class Archetype
     /// <summary>
     /// Removes an entity from this archetype.
     /// </summary>
-    public bool RemoveAt(int chunkIndex, int index, out EntityId movedEntity, out ChunkEntity movedChunkEntity)
+    public bool RemoveAt(int chunkIndex, int index, out EntityId movedEntity)
     {
         var chunk = _chunks[chunkIndex];
         var wasFull = chunk.Full;
 
-        if (chunk.RemoveAt(index, out movedEntity, out var movedFrom))
+        EntityCount--;
+        
+        if (chunk.RemoveAt(index, out movedEntity))
         {
-            EntityCount--;
-
             if (wasFull)
                 AddAvailable(chunk.ArchetypeIndex);
 
-            movedChunkEntity = new ChunkEntity(chunkIndex, movedFrom);
             return true;
         }
 
-        movedChunkEntity = ChunkEntity.Null;
+        if (wasFull)
+            AddAvailable(chunk.ArchetypeIndex);
+        
         return false;
     }
     
