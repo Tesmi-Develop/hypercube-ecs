@@ -1,4 +1,6 @@
-﻿using JetBrains.Annotations;
+﻿using Hypercube.Ecs.Events;
+using Hypercube.Ecs.Lifetime;
+using JetBrains.Annotations;
 
 namespace Hypercube.Ecs.Components.Pool;
 
@@ -34,6 +36,14 @@ public sealed class ComponentPool<T> : IComponentPool where T : struct, ICompone
         _entities   = new int[capacity];
         _indices    = new int[capacity];
         _enabled    = new bool[capacity];
+    }
+
+    public void RaiseRemove(Entity entity, IEventBus eventBus)
+    {
+        if (!Has(entity))
+            return;
+   
+        eventBus.Raise(entity, ref Get(entity), new RemovedEvent());
     }
 
     /// <summary>
