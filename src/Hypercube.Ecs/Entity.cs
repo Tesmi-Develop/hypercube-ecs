@@ -7,9 +7,7 @@ namespace Hypercube.Ecs;
 public readonly partial struct Entity : IEquatable<Entity>
 {
     public const int InvalidId = -1;
-    
     public const int InvalidVersion = -1;
-    public const int QueryVersion = -2;
     
     public static readonly Entity Invalid = new(InvalidId, InvalidVersion);
     

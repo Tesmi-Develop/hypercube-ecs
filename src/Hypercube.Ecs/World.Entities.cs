@@ -6,7 +6,6 @@ namespace Hypercube.Ecs;
 public partial class World
 {
     private readonly EntityFactory _entityFactory = new();
-    private EntityLocation[] _entityLocations = new EntityLocation[1024];
     
     public Entity Create()
     {
@@ -34,11 +33,5 @@ public partial class World
     /// <summary>
     /// Gets the current version for an entity id. Used by QueryEnumerator to construct valid Entity.
     /// </summary>
-    internal int GetEntityVersion(int entityId)
-    {
-        if (entityId < 0 || entityId >= _entityFactory.Versions.Length)
-            return -1;
-        
-        return _entityFactory.Versions[entityId];
-    }
+    public int GetEntityVersion(EntityId id) => _entityFactory.GetVersion(id);
 }

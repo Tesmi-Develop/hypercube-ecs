@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Hypercube.Utilities.Collections;
 
 namespace Hypercube.Ecs.Entities;
@@ -38,6 +39,16 @@ public sealed class EntityFactory
         _generator.Release(entity.Id);
     }
 
+    public int GetVersion(EntityId entityId)
+    {
+        Debug.Assert(!_generator.Invalid(entityId));
+        
+        if (entityId < 0 || entityId >= _versions.Length)
+            return Entity.InvalidVersion;
+        
+        return _versions[entityId];
+    }
+
     #endregion
 
     #region Validation
@@ -46,22 +57,19 @@ public sealed class EntityFactory
     public bool Validate(Entity entity) => ValidateId(entity.Id) && ValidateVersion(entity.Id, entity.Version);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private bool ValidateId(int id) => id != Entity.InvalidId && !_generator.Invalid(id);
-
-    // NOTE: We need use Entity.QueryVersion?
+    private bool ValidateId(EntityId entityId) => entityId != Entity.InvalidId && !_generator.Invalid(entityId);
+    
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private bool ValidateVersion(int id, int version) => version == Entity.QueryVersion || _versions[id] == version;
+    private bool ValidateVersion(EntityId entityId, int version) => _versions[entityId] == version;
     
     #endregion
 
     #region Utilities
 
-    private static void ExpandEnsure(ref int[] array, int index)
+    private static void ExpandEnsure(ref int[] array, EntityId entityId)
     {
-        if (index < array.Length)
-            return;
-        
-        Expand(ref array);
+        while (entityId >= array.Length)
+            Expand(ref array);
     }
 
     private static void Expand(ref int[] array)

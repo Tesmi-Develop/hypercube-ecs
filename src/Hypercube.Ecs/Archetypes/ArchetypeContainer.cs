@@ -54,7 +54,7 @@ public sealed class ArchetypeContainer
         
         Debug.Assert(location.ArchetypeIndex < _archetypes.Length);
         
-        Remove(_locations[entityId]);
+        Remove(location);
     }
 
     public EntityLocation Move(EntityId entityId, Archetype from, Archetype to)

@@ -49,10 +49,6 @@ public sealed class ArchetypeChunk
         // Remove B -> [A, D, C]
         
         Debug.Assert(Count >= 0);
-
-        var a = 1;
-        if (Count == 5)
-            a = 2;
         
         var lastIndex = --Count;
         if (lastIndex == index)
@@ -81,7 +77,7 @@ public sealed class ArchetypeChunk
         
         private int _index;
         
-        public int CurrentEntityId => _chunk._entities[_index];
+        public EntityId CurrentEntityId => _chunk._entities[_index];
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Enumerator(ArchetypeChunk chunk)

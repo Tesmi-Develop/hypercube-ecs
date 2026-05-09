@@ -94,7 +94,7 @@ public sealed class Query
     public Enumerator GetEnumerator()
     {
         Match();
-        return new Enumerator(MatchingArchetypes);
+        return new Enumerator(_world, MatchingArchetypes);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -144,13 +144,23 @@ public sealed class Query
 
     public ref struct Enumerator
     {
+        private readonly World _world;
+        
         private List<Archetype>.Enumerator _archetypeEnumerator;
         private Archetype.Enumerator _currentArchetypeEnumerator;
 
-        public Entity Current => new(_currentArchetypeEnumerator.CurrentEntityId, Entity.QueryVersion);
-
-        public Enumerator(List<Archetype> archetypes)
+        public Entity Current
         {
+            get
+            {
+                var entityId = _currentArchetypeEnumerator.CurrentEntityId;
+                return new Entity(entityId, _world.GetEntityVersion(entityId));
+            }
+        }
+
+        public Enumerator(World world, List<Archetype> archetypes)
+        {
+            _world = world;
             _archetypeEnumerator = archetypes.GetEnumerator();
         }
 
