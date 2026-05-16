@@ -1,5 +1,4 @@
-﻿using Hypercube.Ecs.Archetypes;
-using JetBrains.Annotations;
+﻿using JetBrains.Annotations;
 
 namespace Hypercube.Ecs;
 

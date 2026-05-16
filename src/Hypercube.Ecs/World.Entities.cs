@@ -1,4 +1,5 @@
-﻿using Hypercube.Ecs.Components;
+﻿using System.Diagnostics;
+using Hypercube.Ecs.Components;
 using Hypercube.Ecs.Entities;
 
 namespace Hypercube.Ecs;
@@ -22,8 +23,11 @@ public partial class World
         _archetypes.Remove(entity.Id);
 
         foreach (var pool in _pools.Values)
+        {
+            pool.RaiseRemove(entity, _eventBus);
             pool.Remove(entity);
-
+        }
+        
         _entityFactory.Delete(entity);
     }
 

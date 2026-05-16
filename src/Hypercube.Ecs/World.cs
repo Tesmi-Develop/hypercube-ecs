@@ -63,7 +63,7 @@ public partial class World : IWorld
     private ComponentPool<T> GetPool<T>() where T : struct, IComponent
     {
         if (_pools.TryGetValue(typeof(T), out var pool))
-            return (ComponentPool<T>)pool;
+            return (ComponentPool<T>) pool;
 
         var created = new ComponentPool<T>();
         _pools.Add(typeof(T), created);
