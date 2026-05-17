@@ -20,64 +20,39 @@ public partial class World
     /// </summary>
     private readonly Dictionary<(string Name, int ParamCount), MethodInfo> _genericDefinitions = new();
 
-    /// <summary>
-    /// Dynamically adds a component of the specified <paramref name="type"/> to an entity.
-    /// Uses the default constructor for the component type.
-    /// </summary>
-    /// <param name="entity">The target entity.</param>
-    /// <param name="type">The runtime type of the component to add.</param>
-    /// <returns>The newly created component instance.</returns>
+    /// <inheritdoc/>
     public object Add(Entity entity, Type type)
     {
         var method = GetGenericMethod(nameof(Add), type, Type.EmptyTypes);
         return method.Invoke(this, [entity])!;
     }
 
-    /// <summary>
-    /// Dynamically adds a specific component instance to an entity.
-    /// </summary>
-    /// <param name="entity">The target entity.</param>
-    /// <param name="value">The component instance to add. If null, the operation is ignored.</param>
+    /// <inheritdoc/>
     public void Add(Entity entity, object? value)
     {
         if (value is null) 
             return;
         
         var type = value.GetType();
-        // Finds the overload: Add<T>(Entity entity, ref T component)
         var method = GetGenericMethod(nameof(Add), type, [typeof(Entity), type.MakeByRefType()]);
         method.Invoke(this, [entity, value]);
     }
 
-    /// <summary>
-    /// Dynamically retrieves a component instance of the specified <paramref name="type"/> from an entity.
-    /// </summary>
-    /// <param name="entity">The target entity.</param>
-    /// <param name="type">The runtime type of the component to retrieve.</param>
-    /// <returns>The component instance.</returns>
+    /// <inheritdoc/>
     public object Get(Entity entity, Type type)
     {
         var method = GetGenericMethod(nameof(Get), type, [typeof(Entity)]);
         return method.Invoke(this, [entity])!;
     }
 
-    /// <summary>
-    /// Dynamically checks if an entity has a component of the specified <paramref name="type"/>.
-    /// </summary>
-    /// <param name="entity">The target entity.</param>
-    /// <param name="type">The runtime type of the component to check.</param>
-    /// <returns>True if the entity possesses the component; otherwise, false.</returns>
+    /// <inheritdoc/>
     public bool Has(Entity entity, Type type)
     {
         var method = GetGenericMethod(nameof(Has), type, [typeof(Entity)]);
         return (bool)method.Invoke(this, [entity])!;
     }
 
-    /// <summary>
-    /// Dynamically removes a component of the specified <paramref name="type"/> from an entity.
-    /// </summary>
-    /// <param name="entity">The target entity.</param>
-    /// <param name="type">The runtime type of the component to remove.</param>
+    /// <inheritdoc/>
     public void Remove(Entity entity, Type type)
     {
         var method = GetGenericMethod(nameof(Remove), type, [typeof(Entity)]);
