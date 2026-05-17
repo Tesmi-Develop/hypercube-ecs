@@ -3,9 +3,6 @@ using JetBrains.Annotations;
 
 namespace Hypercube.Ecs;
 
-/// <summary>
-/// Provides a dynamic bridge for component manipulation using runtime <see cref="Type"/> information.
-/// </summary>
 public partial class World
 {
     /// <summary>
